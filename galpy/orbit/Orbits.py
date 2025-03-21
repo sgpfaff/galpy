@@ -6138,6 +6138,8 @@ class Orbit:
         staticPlot : bool, optional
             If True, create a static plot that doesn't allow zooming, panning, etc.
             Default is False.
+        scatterPlot : bool, optional
+            If True, create a scatter plot instead of a line plot. Default is False.
         ro : float or Quantity, optional
             Physical scale in kpc for distances to use to convert. Default is the object-wide default.
         vo : float or Quantity, optional
@@ -6302,6 +6304,9 @@ class Orbit:
         kwargs.pop("quantity", None)
         width = kwargs.pop("width", 600)
         height = kwargs.pop("height", 400)
+        scatterPlot = kwargs.pop("scatterPlot", False)
+        
+
         # Dump data to HTML
         nplots = len(xs)
         jsonDict = {}
@@ -6360,6 +6365,16 @@ class Orbit:
                     for ii in range(self.size - len(line_colors))
                 ]
             )
+        
+        # style
+        if scatterPlot:
+            mode_ = 'markers'
+            init_plotTime = 'numPerFrame-1'
+            width_lead = 0. # width of the leading line
+        else:
+            mode_ = 'lines'
+            init_plotTime = '0'
+            width_lead = 3. # width of the leading line
         layout = """{{
   xaxis: {{
     title: '{xlabel}',
@@ -6408,7 +6423,7 @@ class Orbit:
       customdata: data.time,
       hovertemplate: {hovertemplate},
       name: '',
-      mode: 'lines',
+      mode: '{mode}',
       line: {{
         shape: 'spline',
         width: 0.8,
@@ -6426,13 +6441,16 @@ class Orbit:
       mode: 'lines',
       line: {{
         shape: 'spline',
-        width: 3.,
+        width: '{width_2}',
         color: '{line_color}',
         }},
       type: "scattergl",
     }};
 """.format(
             line_color=line_colors[0],
+            mode = mode_,
+            init_numPerFrame=init_plotTime,
+            width_2 = width_lead,
             hovertemplate=hovertemplate(names[0], xlabels[0], ylabels[0], tlabel),
             hovertemplate_current=hovertemplate_current(
                 names[0], xlabels[0], ylabels[0], tlabel
@@ -6705,178 +6723,177 @@ class Orbit:
 """.format(traces_cumul=traces_cumul)
         else:  # else for "if there is a 3rd or 2nd panel" (don't think we can get here!)
             setup_trace3 = ""
-        return HTML(
-            """
-<style>
-.galpybutton {{
-    background-color:#ffffff;
-    -moz-border-radius:16px;
-    -webkit-border-radius:16px;
-    border-radius:16px;
-    border:1px solid #1f77b4;
-    display:inline-block;
-    cursor:pointer;
-    color:#1f77b4;
-    font-family:Courier;
-    font-size:17px;
-    padding:8px 10px;
-    text-decoration:none;
-    text-shadow:0px 1px 0px #2f6627;
-}}
-.galpybutton:hover {{
-    background-color:#ffffff;
-}}
-.galpybutton:active {{
-    position:relative;
-    top:1px;
-}}
-.galpybutton:focus{{
-    outline:0;
-}}
-</style>
-
-<div id='galpy-{divid}' style='width:{width}px;height:{height}px;'></div>
-<div class="controlbutton" id="galpy-{divid}-play" style="margin-left:{button_margin_left}px;display: inline-block;">
-<button class="galpybutton" id="galpy-{divid}-playpause" style='width: 108px !important'>Play</button></div>
-<div class="controlbutton" id="galpy-{divid}-timestwo" style="margin-left:10px;display: inline-block;">
-<button class="galpybutton">Speed<font face="Arial">&thinsp;</font>x<font face="Arial">&thinsp;</font>2</button></div>
-<div class="controlbutton" id="galpy-{divid}-timeshalf" style="margin-left:10px;display: inline-block;">
-<button class="galpybutton">Speed<font face="Arial">&thinsp;</font>/<font face="Arial">&thinsp;</font>2</button></div>
-<div class="controlbutton" id="galpy-{divid}-replay" style="margin-left:10px;display: inline-block;">
-<button class="galpybutton">Replay</button></div>
-
-<script>
-function galpy_{divid}_animation () {{
-require.config({{
-  paths: {{
-    jquery: 'https://ajax.googleapis.com/ajax/libs/jquery/3.6.1/jquery.min',
-    Plotly: 'https://cdnjs.cloudflare.com/ajax/libs/plotly.js/2.16.4/plotly.min',
-  }}
-}});
-require(['jquery','Plotly'], function ($,Plotly) {{
-{json_code}
-  let layout = {layout};
-  let numPerFrame= 5;
-  let cnt= 1;
-  let interval;
-  let trace_slice_len;
-  let trace_slice_begin;
-  let trace_slice_end;
-
-  setup_trace();
-
-  $('.controlbutton button').click(function() {{
-    let button_type= this.parentNode.id;
-    if ( button_type === 'galpy-{divid}-play' ) {{
-      clearInterval(interval);
-      interval= animate_trace();
-      document.querySelector('#galpy-{divid}-playpause').textContent = 'Pause';
-      document.getElementById('galpy-{divid}-play').id = 'galpy-{divid}-pause';
+            return HTML(
+                """
+    <style>
+    .galpybutton {{
+        background-color:#ffffff;
+        -moz-border-radius:16px;
+        -webkit-border-radius:16px;
+        border-radius:16px;
+        border:1px solid #1f77b4;
+        display:inline-block;
+        cursor:pointer;
+        color:#1f77b4;
+        font-family:Courier;
+        font-size:17px;
+        padding:8px 10px;
+        text-decoration:none;
+        text-shadow:0px 1px 0px #2f6627;
     }}
-    else if ( button_type === 'galpy-{divid}-pause' ) {{
+    .galpybutton:hover {{
+        background-color:#ffffff;
+    }}
+    .galpybutton:active {{
+        position:relative;
+        top:1px;
+    }}
+    .galpybutton:focus{{
+        outline:0;
+    }}
+    </style>
+
+    <div id='galpy-{divid}' style='width:{width}px;height:{height}px;'></div>
+    <div class="controlbutton" id="galpy-{divid}-play" style="margin-left:{button_margin_left}px;display: inline-block;">
+    <button class="galpybutton" id="galpy-{divid}-playpause" style='width: 108px !important'>Play</button></div>
+    <div class="controlbutton" id="galpy-{divid}-timestwo" style="margin-left:10px;display: inline-block;">
+    <button class="galpybutton">Speed<font face="Arial">&thinsp;</font>x<font face="Arial">&thinsp;</font>2</button></div>
+    <div class="controlbutton" id="galpy-{divid}-timeshalf" style="margin-left:10px;display: inline-block;">
+    <button class="galpybutton">Speed<font face="Arial">&thinsp;</font>/<font face="Arial">&thinsp;</font>2</button></div>
+    <div class="controlbutton" id="galpy-{divid}-replay" style="margin-left:10px;display: inline-block;">
+    <button class="galpybutton">Replay</button></div>
+
+    <script>
+    function galpy_{divid}_animation () {{
+    require.config({{
+    paths: {{
+        jquery: 'https://ajax.googleapis.com/ajax/libs/jquery/3.6.1/jquery.min',
+        Plotly: 'https://cdnjs.cloudflare.com/ajax/libs/plotly.js/2.16.4/plotly.min',
+    }}
+    }});
+    require(['jquery','Plotly'], function ($,Plotly) {{
+    {json_code}
+    let layout = {layout};
+    let numPerFrame= 5;
+    let cnt= 1;
+    let interval;
+    let trace_slice_len;
+    let trace_slice_begin;
+    let trace_slice_end;
+
+    setup_trace();
+
+    $('.controlbutton button').click(function() {{
+        let button_type= this.parentNode.id;
+        if ( button_type === 'galpy-{divid}-play' ) {{
         clearInterval(interval);
-        document.querySelector('#galpy-{divid}-playpause').textContent = 'Resume';
-        document.getElementById('galpy-{divid}-pause').id = 'galpy-{divid}-play';
+        interval= animate_trace();
+        document.querySelector('#galpy-{divid}-playpause').textContent = 'Pause';
+        document.getElementById('galpy-{divid}-play').id = 'galpy-{divid}-pause';
         }}
-    else if ( button_type === 'galpy-{divid}-timestwo' ) {{
-      cnt/= 2;
-      numPerFrame*= 2;
+        else if ( button_type === 'galpy-{divid}-pause' ) {{
+            clearInterval(interval);
+            document.querySelector('#galpy-{divid}-playpause').textContent = 'Resume';
+            document.getElementById('galpy-{divid}-pause').id = 'galpy-{divid}-play';
+            }}
+        else if ( button_type === 'galpy-{divid}-timestwo' ) {{
+        cnt/= 2;
+        numPerFrame*= 2;
+        }}
+        else if ( button_type === 'galpy-{divid}-timeshalf' ) {{
+        cnt*= 2;
+        numPerFrame/= 2;
+        }}
+        else if ( button_type === 'galpy-{divid}-replay' ) {{
+        $("#galpy-{divid}-playpause").removeAttr('disabled');
+        document.querySelector('#galpy-{divid}-playpause').textContent = 'Pause';
+        try {{ // doesn't exist if replay with pressing pause
+        document.getElementById('galpy-{divid}-play').id = 'galpy-{divid}-pause';
+        }}
+        catch (err) {{
+        }}
+        cnt= 1;
+        try {{ // doesn't exist if animation has already ended
+            Plotly.deleteTraces('galpy-{divid}',[{trace_num_20_list}]);
+        }}
+        catch (err) {{
+        }}
+            Plotly.deleteTraces('galpy-{divid}', {trace_num_list});
+        clearInterval(interval);
+        setup_trace();
+        interval= animate_trace();
+        }}
+    }});
+
+    function setup_trace() {{
+        {setup_trace1}
+
+        {setup_trace2}
+
+        {setup_trace3}
+
+        Plotly.newPlot('galpy-{divid}',traces,layout,{config});
     }}
-    else if ( button_type === 'galpy-{divid}-timeshalf' ) {{
-      cnt*= 2;
-      numPerFrame/= 2;
+    function animate_trace() {{
+        return setInterval(function() {{
+        // Make sure narrow and thick trace end in the same
+        // and the highlighted length has constant length
+        trace_slice_len= Math.floor(numPerFrame);
+        if ( trace_slice_len < 1) trace_slice_len= 1;
+        trace_slice_begin= Math.floor(cnt*numPerFrame);
+        trace_slice_end= Math.floor(Math.min(cnt*numPerFrame+trace_slice_len,data.x1_0.length-1));
+        traces = {{x: [{x_data_list}], y: [{y_data_list}], customdata:[{t_data_list}]}};
+        Plotly.extendTraces('galpy-{divid}', traces, [{trace_num_10_list}]);
+        trace_slice_begin-= trace_slice_len;
+        traces = {{x: [{x_data_list}], y: [{y_data_list}], customdata:[{t_data_list}]}};
+        Plotly.restyle('galpy-{divid}', traces, [{trace_num_20_list}]);
+        cnt+= 1;
+        // need to clearInterval here otherwise the pan/zoom/rotate is bugged somehow at the end of play
+        if (cnt*numPerFrame+trace_slice_len>data.x1_0.length) {{
+            document.getElementById("galpy-{divid}-playpause").disabled = "disabled";
+            document.querySelector('#galpy-{divid}-playpause').textContent = 'Finished!';
+            // making sure the whole orbits is plotted when finished
+            trace_slice_begin = trace_slice_end;
+            trace_slice_end = -1;
+            traces = {{x: [{x_data_list}], y: [{y_data_list}], customdata:[{t_data_list}]}};
+            Plotly.extendTraces('galpy-{divid}', traces, [{trace_num_10_list}]);
+            // make sure trace heads are gone when finished playing, sometimes they will stay around
+            Plotly.deleteTraces('galpy-{divid}', [{trace_num_20_list}]);
+            clearInterval(interval);
+        }};
+            }}, 30);
+        }}
+    {close_json_code}}});
     }}
-    else if ( button_type === 'galpy-{divid}-replay' ) {{
-      $("#galpy-{divid}-playpause").removeAttr('disabled');
-      document.querySelector('#galpy-{divid}-playpause').textContent = 'Pause';
-      try {{ // doesn't exist if replay with pressing pause
-      document.getElementById('galpy-{divid}-play').id = 'galpy-{divid}-pause';
-      }}
-      catch (err) {{
-      }}
-      cnt= 1;
-      try {{ // doesn't exist if animation has already ended
-        Plotly.deleteTraces('galpy-{divid}',[{trace_num_20_list}]);
-      }}
-      catch (err) {{
-      }}
-        Plotly.deleteTraces('galpy-{divid}', {trace_num_list});
-      clearInterval(interval);
-      setup_trace();
-      interval= animate_trace();
-    }}
-  }});
-
-  function setup_trace() {{
-    {setup_trace1}
-
-    {setup_trace2}
-
-    {setup_trace3}
-
-    Plotly.newPlot('galpy-{divid}',traces,layout,{config});
-  }}
-
-  function animate_trace() {{
-    return setInterval(function() {{
-      // Make sure narrow and thick trace end in the same
-      // and the highlighted length has constant length
-      trace_slice_len= Math.floor(numPerFrame);
-      if ( trace_slice_len < 1) trace_slice_len= 1;
-      trace_slice_begin= Math.floor(cnt*numPerFrame);
-      trace_slice_end= Math.floor(Math.min(cnt*numPerFrame+trace_slice_len,data.x1_0.length-1));
-      traces = {{x: [{x_data_list}], y: [{y_data_list}], customdata:[{t_data_list}]}};
-      Plotly.extendTraces('galpy-{divid}', traces, [{trace_num_10_list}]);
-      trace_slice_begin-= trace_slice_len;
-      traces = {{x: [{x_data_list}], y: [{y_data_list}], customdata:[{t_data_list}]}};
-      Plotly.restyle('galpy-{divid}', traces, [{trace_num_20_list}]);
-      cnt+= 1;
-      // need to clearInterval here otherwise the pan/zoom/rotate is bugged somehow at the end of play
-      if (cnt*numPerFrame+trace_slice_len>data.x1_0.length) {{
-          document.getElementById("galpy-{divid}-playpause").disabled = "disabled";
-          document.querySelector('#galpy-{divid}-playpause').textContent = 'Finished!';
-          // making sure the whole orbits is plotted when finished
-          trace_slice_begin = trace_slice_end;
-          trace_slice_end = -1;
-          traces = {{x: [{x_data_list}], y: [{y_data_list}], customdata:[{t_data_list}]}};
-          Plotly.extendTraces('galpy-{divid}', traces, [{trace_num_10_list}]);
-          // make sure trace heads are gone when finished playing, sometimes they will stay around
-          Plotly.deleteTraces('galpy-{divid}', [{trace_num_20_list}]);
-          clearInterval(interval);
-      }};
-        }}, 30);
-    }}
-{close_json_code}}});
-}}
-if ( typeof window.require == 'undefined' ) {{
-  var require_script = document.createElement('script');
-  require_script.src = 'https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.6/require.min.js';
-  require_script.addEventListener('load', () => {{
+    if ( typeof window.require == 'undefined' ) {{
+    var require_script = document.createElement('script');
+    require_script.src = 'https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.6/require.min.js';
+    require_script.addEventListener('load', () => {{
+        galpy_{divid}_animation();
+    }});
+    document.body.appendChild(require_script);
+    }} else {{
     galpy_{divid}_animation();
-  }});
-  document.body.appendChild(require_script);
-}} else {{
-  galpy_{divid}_animation();
-}}
-</script>""".format(
-                json_code=json_code,
-                close_json_code=close_json_code,
-                divid=self.divid,
-                width=width,
-                height=height,
-                button_margin_left=button_margin_left,
-                config=config,
-                layout=layout,
-                x_data_list=x_data_list,
-                y_data_list=y_data_list,
-                t_data_list=t_data_list,
-                trace_num_10_list=trace_num_10_list,
-                trace_num_20_list=trace_num_20_list,
-                setup_trace1=setup_trace1,
-                setup_trace2=setup_trace2,
-                setup_trace3=setup_trace3,
-                trace_num_list=[ii for ii in range(self.size * len(d1s))],
-            )
+    }}
+    </script>""".format(
+                    json_code=json_code,
+                    close_json_code=close_json_code,
+                    divid=self.divid,
+                    width=width,
+                    height=height,
+                    button_margin_left=button_margin_left,
+                    config=config,
+                    layout=layout,
+                    x_data_list=x_data_list,
+                    y_data_list=y_data_list,
+                    t_data_list=t_data_list,
+                    trace_num_10_list=trace_num_10_list,
+                    trace_num_20_list=trace_num_20_list,
+                    setup_trace1=setup_trace1,
+                    setup_trace2=setup_trace2,
+                    setup_trace3=setup_trace3,
+                    trace_num_list=[ii for ii in range(self.size * len(d1s))],
+                )
         )
 
     def animate3d(self, mw_plane_bg=False, **kwargs):  # pragma: no cover
