@@ -59,25 +59,14 @@ class EinastoPotential(SphericalPotential):
 
     def _revaluate(self, r, t=0.0):
         """Potential as a function of r and time"""
-        h = r / self.a
+        x = r / self.a
         return (
-
+            r**-1
+            * (
+                1 - '''gamma_function(3 * self.n, x**(1/n))''' / '''gamma_function(3 * self.n))'''
+                + (x * '''gamma_function(2 * self.n, x**(1/n))''' / '''gamma_function(3 * self.n))''')
+            )
         )
-    # (
-    #         -(self.a**2.0)
-    #         * numpy.pi
-    #         * (
-    #             -numpy.pi / x
-    #             + 2.0 * (1.0 / x + 1) * numpy.arctan(1 / x)
-    #             + (1.0 / x + 1) * numpy.log((1.0 + 1.0 / x) ** 2.0 / (1.0 + 1 / x**2.0))
-    #             + special.xlogy(2.0 / x, 1.0 + x**2.0)
-    #         )
-    #     )
-
-    # Previous way, not stable as r -> infty
-    # return -self.a**2.*numpy.pi/x*(-numpy.pi+2.*(1.+x)*numpy.arctan(1/x)
-    #                                +2.*(1.+x)*numpy.log(1.+x)
-    #                                +(1.-x)*numpy.log(1.+x**2.))
 
     def _rforce(self, r, t=0.0):
         x = r / self.a
